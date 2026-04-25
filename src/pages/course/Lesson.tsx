@@ -1,8 +1,8 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import Spline from '@splinetool/react-spline';
 import { useParams, useNavigate, Link } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
-import { ChevronLeft, ChevronRight, CheckCircle2, Circle, Code2, BookOpen, HelpCircle } from "lucide-react";
+import { ChevronLeft, ChevronRight, CheckCircle2, Circle, Code2, BookOpen, HelpCircle, Trophy } from "lucide-react";
 import Navbar from "@/components/Navbar";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -16,7 +16,7 @@ export default function Lesson() {
   const { id } = useParams();
   const navigate = useNavigate();
   const { toast } = useToast();
-  const { markLessonComplete, isLessonComplete } = useCourseProgress();
+  const { markLessonComplete, isLessonComplete, progress } = useCourseProgress();
   
   const [currentStep, setCurrentStep] = useState<Step>("learn");
   const [selectedOption, setSelectedOption] = useState<number | null>(null);
@@ -312,12 +312,12 @@ export default function Lesson() {
               <div className="bg-white/5 backdrop-blur-xl rounded-xl p-4 border border-white/5 shadow-xl">
                 <div className="flex justify-between items-center mb-2">
                   <span className="text-xs text-zinc-500">Course Completion</span>
-                  <span className="text-xs text-primary font-bold">33%</span>
+                  <span className="text-xs text-primary font-bold">{Math.round((progress.completedLessons.length / cppLessons.length) * 100)}%</span>
                 </div>
                 <div className="w-full bg-zinc-800 h-1.5 rounded-full overflow-hidden">
                   <motion.div 
                     initial={{ width: 0 }}
-                    animate={{ width: "33%" }}
+                    animate={{ width: `${Math.round((progress.completedLessons.length / cppLessons.length) * 100)}%` }}
                     className="bg-primary h-full shadow-[0_0_10px_rgba(var(--primary),0.8)]"
                   />
                 </div>

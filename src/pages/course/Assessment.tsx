@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import Spline from '@splinetool/react-spline';
 import { useNavigate, Link } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
-import { Trophy, Timer, CheckCircle, XCircle, ChevronRight, Download, Share2, RefreshCw } from "lucide-react";
+import { Trophy, Timer, CheckCircle, XCircle, ChevronRight, Download, Share2, RefreshCw, Award } from "lucide-react";
 import Navbar from "@/components/Navbar";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
