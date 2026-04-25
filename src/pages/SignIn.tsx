@@ -136,7 +136,7 @@ export default function SignIn() {
           </Tabs>
         </div>
 
-        <p className="mt-4 text-center text-xs text-muted-foreground">Secure authentication powered by Skill-Set-Go</p>
+        <p className="mt-4 text-center text-xs text-muted-foreground">Secure authentication powered by ALGO-X SYNAPSE</p>
       </div>
     </div>
   );

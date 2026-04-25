@@ -83,10 +83,10 @@ export function Logo({ className = "" }: { className?: string }) {
       {/* Text Area */}
       <div className="flex items-center -mt-2">
         <span className="text-xl sm:text-3xl font-bold tracking-tight text-[#1e3a8a] font-sans">
-          Skillset
+          ALGO-X
         </span>
         <span className="text-xl sm:text-3xl font-black tracking-tight text-transparent bg-clip-text bg-gradient-to-r from-[#ea580c] to-[#f59e0b] font-sans">
-          GO
+          SYNAPSE
         </span>
       </div>
     </div>
@@ -110,10 +110,10 @@ export function LogoSmall({ className = "" }: { className?: string }) {
       {/* Small Text */}
       <div className="flex items-center text-lg sm:text-xl leading-none">
         <span className="font-bold tracking-tight text-[#1e3a8a]">
-          Skillset
+          ALGO-X
         </span>
         <span className="font-black tracking-tight text-transparent bg-clip-text bg-gradient-to-r from-[#ea580c] to-[#f59e0b]">
-          GO
+          SYNAPSE
         </span>
       </div>
 
