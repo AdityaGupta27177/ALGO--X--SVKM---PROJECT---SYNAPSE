@@ -23,6 +23,7 @@ export default function Assessment() {
   const [isFinished, setIsFinished] = useState(progress.certificateGenerated);
   const [score, setScore] = useState(progress.certificateGenerated ? 85 : 0); // Default pass score for revisit
   const [timeLeft, setTimeLeft] = useState(600); // 10 minutes
+  const [isSplineLoading, setIsSplineLoading] = useState(true);
 
   useEffect(() => {
     if (isFinished || timeLeft <= 0) return;
@@ -45,31 +46,41 @@ export default function Assessment() {
   };
 
   const calculateResult = () => {
-    let correctCount = 0;
-    finalAssessment.forEach((q, idx) => {
-      if (userAnswers[idx] === q.correctIndex) correctCount++;
-    });
-    
-    const finalScore = Math.round((correctCount / finalAssessment.length) * 100);
-    setScore(finalScore);
-    setIsFinished(true);
+    try {
+      let correctCount = 0;
+      finalAssessment.forEach((q, idx) => {
+        if (userAnswers[idx] === q.correctIndex) correctCount++;
+      });
+      
+      const finalScore = Math.round((correctCount / finalAssessment.length) * 100);
+      setScore(finalScore);
+      setIsFinished(true);
 
-    if (finalScore >= 70) {
-      confetti({
-        particleCount: 150,
-        spread: 70,
-        origin: { y: 0.6 }
-      });
-      unlockCertificate();
-      toast({
-        title: "Congratulations!",
-        description: `You passed with ${finalScore}%. Your certificate is ready!`,
-      });
-    } else {
+      if (finalScore >= 70) {
+        confetti({
+          particleCount: 150,
+          spread: 70,
+          origin: { y: 0.6 },
+          colors: ['#EAB308', '#FFFFFF', '#3B82F6']
+        });
+        unlockCertificate();
+        toast({
+          title: "Assessment Passed!",
+          description: `Score: ${finalScore}%. Your certificate is ready for download.`,
+        });
+      } else {
+        toast({
+          variant: "destructive",
+          title: "Assessment Failed",
+          description: `Score: ${finalScore}%. You need 70% to pass. Try again!`,
+        });
+      }
+    } catch (err) {
+      console.error("Calculation error:", err);
       toast({
         variant: "destructive",
-        title: "Almost there",
-        description: `You scored ${finalScore}%. You need 70% to pass.`,
+        title: "Evaluation Error",
+        description: "Something went wrong while grading. Please refresh and try again.",
       });
     }
   };
@@ -85,11 +96,28 @@ export default function Assessment() {
     return (
       <div className="min-h-screen relative overflow-hidden bg-[#0a0a0a] text-white">
         {/* 3D Spline Background */}
-        <div className="fixed inset-0 z-0 w-full h-full pointer-events-auto flex items-center justify-center overflow-hidden opacity-30">
+        <div className="fixed inset-0 z-0 w-full h-full pointer-events-none flex items-center justify-center overflow-hidden opacity-30">
           <div className="w-full h-full scale-[1.5] origin-center">
-            <Spline className="w-full h-full" scene="https://prod.spline.design/y-2X8jz-aKmn7u0m/scene.splinecode" />
+            <Spline 
+              onLoad={() => setIsSplineLoading(false)}
+              className="w-full h-full" 
+              scene="https://prod.spline.design/y-2X8jz-aKmn7u0m/scene.splinecode" 
+            />
           </div>
         </div>
+
+        {/* Loading Overlay */}
+        <AnimatePresence>
+          {isSplineLoading && (
+            <motion.div 
+              exit={{ opacity: 0 }}
+              className="fixed inset-0 z-50 bg-[#0a0a0a] flex flex-col items-center justify-center gap-4"
+            >
+              <div className="w-12 h-12 border-4 border-primary/20 border-t-primary rounded-full animate-spin" />
+              <p className="text-primary font-bold tracking-widest uppercase text-xs animate-pulse">Initializing Assessment...</p>
+            </motion.div>
+          )}
+        </AnimatePresence>
 
         <div className="relative z-10 flex flex-col min-h-screen">
           <Navbar />
@@ -126,22 +154,37 @@ export default function Assessment() {
               </div>
             </Card>
 
-            <div className="flex flex-col sm:flex-row gap-4 justify-center">
+            <div className="flex flex-col gap-6 items-center">
               {passed ? (
-                <>
-                  <CertificateGenerator score={score} />
-                  <Button variant="outline" className="border-zinc-800 text-white gap-2">
-                    <Share2 size={18} /> Share Result
-                  </Button>
-                </>
+                <div className="w-full space-y-6">
+                  <div className="bg-yellow-500/5 border border-yellow-500/20 rounded-2xl p-6 flex flex-col items-center gap-4">
+                    <Award size={48} className="text-yellow-500" />
+                    <div className="space-y-1">
+                      <h3 className="text-xl font-bold">Certificate Earned!</h3>
+                      <p className="text-sm text-zinc-400">Your achievement has been recorded and your certificate is ready.</p>
+                    </div>
+                    <CertificateGenerator score={score} />
+                  </div>
+                  
+                  <div className="flex gap-4 justify-center">
+                    <Button variant="outline" className="border-zinc-800 text-white gap-2">
+                      <Share2 size={18} /> Share Result
+                    </Button>
+                    <Button asChild variant="link" className="text-zinc-500 hover:text-white">
+                      <Link to="/course/cpp">Back to Roadmap</Link>
+                    </Button>
+                  </div>
+                </div>
               ) : (
-                <Button onClick={() => window.location.reload()} className="bg-primary hover:bg-primary/90 text-white gap-2 h-12 px-8">
-                  <RefreshCw size={18} /> Retry Assessment
-                </Button>
+                <div className="space-y-6">
+                  <Button onClick={() => window.location.reload()} className="bg-primary hover:bg-primary/90 text-white gap-2 h-12 px-8">
+                    <RefreshCw size={18} /> Retry Assessment
+                  </Button>
+                  <Button asChild variant="link" className="text-zinc-500 hover:text-white block">
+                    <Link to="/course/cpp">Review Roadmap</Link>
+                  </Button>
+                </div>
               )}
-              <Button asChild variant="link" className="text-zinc-500 hover:text-white">
-                <Link to="/course/cpp">Back to Roadmap</Link>
-              </Button>
             </div>
           </motion.div>
         </main>
@@ -155,11 +198,28 @@ export default function Assessment() {
   return (
     <div className="min-h-screen relative overflow-hidden bg-[#0a0a0a] text-white flex flex-col">
       {/* 3D Spline Background */}
-      <div className="fixed inset-0 z-0 w-full h-full pointer-events-auto flex items-center justify-center overflow-hidden opacity-30">
+      <div className="fixed inset-0 z-0 w-full h-full pointer-events-none flex items-center justify-center overflow-hidden opacity-30">
         <div className="w-full h-full scale-[1.5] origin-center">
-          <Spline className="w-full h-full" scene="https://prod.spline.design/y-2X8jz-aKmn7u0m/scene.splinecode" />
+          <Spline 
+            onLoad={() => setIsSplineLoading(false)}
+            className="w-full h-full" 
+            scene="https://prod.spline.design/y-2X8jz-aKmn7u0m/scene.splinecode" 
+          />
         </div>
       </div>
+
+      {/* Loading Overlay */}
+      <AnimatePresence>
+        {isSplineLoading && (
+          <motion.div 
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-50 bg-[#0a0a0a] flex flex-col items-center justify-center gap-4"
+          >
+            <div className="w-12 h-12 border-4 border-primary/20 border-t-primary rounded-full animate-spin" />
+            <p className="text-primary font-bold tracking-widest uppercase text-xs animate-pulse">Initializing Lab Environment...</p>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       <div className="relative z-10 flex flex-col flex-1">
         <Navbar />
@@ -167,7 +227,7 @@ export default function Assessment() {
         <div className="flex-1 flex flex-col max-w-4xl mx-auto w-full px-4 py-12 pointer-events-none">
           <div className="flex justify-between items-center mb-8 pointer-events-auto">
             <div className="space-y-1">
-              <h2 className="text-sm font-bold text-primary uppercase tracking-widest drop-shadow-[0_0_8px_rgba(var(--primary),0.5)]">Final Assessment</h2>
+              <h2 className="text-sm font-bold text-primary uppercase tracking-widest drop-shadow-[0_0_8px_rgba(59,130,246,0.5)]">Final Assessment</h2>
               <p className="text-zinc-500">Question {currentQuestionIdx + 1} of {finalAssessment.length}</p>
             </div>
             <div className="flex items-center gap-3 bg-white/5 backdrop-blur-md border border-white/10 px-4 py-2 rounded-xl shadow-lg">
@@ -200,7 +260,7 @@ export default function Assessment() {
                     onClick={() => handleAnswerSelect(idx)}
                     className={`text-left p-6 rounded-2xl border transition-all group flex items-center justify-between backdrop-blur-sm
                       ${userAnswers[currentQuestionIdx] === idx 
-                        ? 'border-primary bg-primary/10 text-white shadow-[0_0_20px_rgba(var(--primary),0.2)] ring-1 ring-primary/30' 
+                        ? 'border-primary bg-primary/10 text-white shadow-[0_0_20px_rgba(59,130,246,0.2)] ring-1 ring-primary/30' 
                         : 'border-white/5 bg-white/5 text-zinc-400 hover:border-white/20 hover:bg-white/10'}
                     `}
                   >
@@ -229,7 +289,7 @@ export default function Assessment() {
           <Button 
             onClick={nextQuestion} 
             disabled={userAnswers[currentQuestionIdx] === undefined}
-            className="bg-primary hover:bg-primary/90 text-white px-10 h-12 text-lg shadow-[0_0_20px_rgba(var(--primary),0.3)] transition-all"
+            className="bg-primary hover:bg-primary/90 text-white px-10 h-12 text-lg shadow-[0_0_20px_rgba(59,130,246,0.3)] transition-all"
           >
             {currentQuestionIdx === finalAssessment.length - 1 ? 'Finish Exam' : 'Next Question'}
             <ChevronRight className="ml-2" />

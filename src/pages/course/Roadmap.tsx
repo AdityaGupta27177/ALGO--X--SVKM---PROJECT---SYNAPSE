@@ -1,6 +1,7 @@
+import { useState } from "react";
 import { Link } from "react-router-dom";
 import Spline from '@splinetool/react-spline';
-import { motion } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
 import { Check, Lock, Play, BookOpen, Trophy } from "lucide-react";
 import Navbar from "@/components/Navbar";
 import { Button } from "@/components/ui/button";
@@ -10,6 +11,7 @@ import { useCourseProgress } from "@/lib/useCourseProgress";
 export default function Roadmap() {
   const { progress } = useCourseProgress();
   const { completedLessons } = progress;
+  const [isSplineLoading, setIsSplineLoading] = useState(true);
 
   const isLessonUnlocked = (index: number) => {
     if (index === 0) return true;
@@ -21,13 +23,33 @@ export default function Roadmap() {
   return (
     <div className="min-h-screen relative overflow-hidden bg-[#0a0a0a] text-foreground">
       {/* 3D Spline Background - Grid of Cubes (Specific to this page) */}
-      <div className="fixed inset-0 z-0 w-full h-full pointer-events-auto flex items-center justify-center overflow-hidden opacity-40">
+      <div className="fixed inset-0 z-0 w-full h-full pointer-events-none flex items-center justify-center overflow-hidden opacity-40">
         <div className="w-full h-full scale-[1.2] lg:scale-[1.1] origin-center">
-          <Spline className="w-full h-full" scene="https://prod.spline.design/PpLxAgGdfM8nQzv2/scene.splinecode" />
+          <Spline 
+            onLoad={() => setIsSplineLoading(false)}
+            className="w-full h-full" 
+            scene="https://prod.spline.design/PpLxAgGdfM8nQzv2/scene.splinecode" 
+          />
         </div>
       </div>
 
-      <div className="relative z-10 pointer-events-none min-h-screen flex flex-col">
+      {/* Loading Overlay */}
+      <AnimatePresence>
+        {isSplineLoading && (
+          <motion.div 
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-50 bg-[#0a0a0a] flex flex-col items-center justify-center gap-4"
+          >
+            <div className="w-16 h-16 border-4 border-primary/20 border-t-primary rounded-full animate-spin" />
+            <div className="text-center">
+              <p className="text-primary font-bold tracking-widest uppercase text-xs animate-pulse mb-1">Connecting to Synapse...</p>
+              <p className="text-zinc-600 text-[10px] uppercase tracking-widest">Building 3D Learning Grid</p>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      <div className="relative z-20 min-h-screen flex flex-col">
         <div className="pointer-events-auto">
           <Navbar />
         </div>
@@ -80,22 +102,27 @@ export default function Roadmap() {
                   <div className="relative flex items-center w-full max-w-4xl">
                     {/* Node Orb */}
                     <div className="flex-1 flex justify-center pointer-events-auto">
-                      <motion.div
-                        initial={{ opacity: 0, scale: 0.8 }}
-                        animate={{ opacity: 1, scale: 1 }}
-                        whileHover={unlocked ? { scale: 1.15 } : {}}
-                        className={`relative z-10 flex items-center justify-center w-24 h-24 rounded-full border-2 transition-all duration-500
-                          ${completed ? 'border-primary bg-primary/20 text-primary shadow-[0_0_50px_rgba(var(--primary),0.6)]' : 
-                            unlocked ? 'border-accent bg-accent/20 text-accent animate-pulse shadow-[0_0_40px_rgba(var(--accent),0.4)] cursor-pointer' : 
-                            'border-zinc-800 bg-zinc-900/80 text-zinc-700 backdrop-blur-md'
-                          }`}
+                      <Link 
+                        to={unlocked ? `/course/cpp/lesson/${lesson.id}` : "#"}
+                        className={unlocked ? "cursor-pointer" : "cursor-default"}
                       >
-                        {completed ? <Check size={36} strokeWidth={3} /> : unlocked ? <Play size={36} className="ml-1 fill-accent" /> : <Lock size={36} />}
-                        
-                        {unlocked && !completed && (
-                          <div className="absolute -inset-4 border-2 border-accent/20 rounded-full animate-slow-spin border-dashed" />
-                        )}
-                      </motion.div>
+                        <motion.div
+                          initial={{ opacity: 0, scale: 0.8 }}
+                          animate={{ opacity: 1, scale: 1 }}
+                          whileHover={unlocked ? { scale: 1.15 } : {}}
+                          className={`relative z-10 flex items-center justify-center w-24 h-24 rounded-full border-2 transition-all duration-500
+                            ${completed ? 'border-primary bg-primary/20 text-primary shadow-[0_0_50px_rgba(59,130,246,0.6)]' : 
+                              unlocked ? 'border-accent bg-accent/20 text-accent animate-pulse shadow-[0_0_40px_rgba(34,211,238,0.4)]' : 
+                              'border-zinc-800 bg-zinc-900/80 text-zinc-700 backdrop-blur-md'
+                            }`}
+                        >
+                          {completed ? <Check size={36} strokeWidth={3} /> : unlocked ? <Play size={36} className="ml-1 fill-accent" /> : <Lock size={36} />}
+                          
+                          {unlocked && !completed && (
+                            <div className="absolute -inset-4 border-2 border-accent/20 rounded-full animate-slow-spin border-dashed" />
+                          )}
+                        </motion.div>
+                      </Link>
                     </div>
 
                     {/* Lesson Info Card - Aligned Alternately */}
@@ -144,18 +171,23 @@ export default function Roadmap() {
                 className={`absolute -top-16 w-1 ${allLessonsCompleted ? 'bg-yellow-500 shadow-[0_0_15px_rgba(234,179,8,0.5)]' : 'bg-zinc-900'}`}
               />
 
-              <motion.div
-                initial={{ opacity: 0, scale: 0.8 }}
-                animate={{ opacity: 1, scale: 1 }}
-                whileHover={allLessonsCompleted ? { scale: 1.1 } : {}}
-                className={`relative z-10 flex items-center justify-center w-32 h-32 rounded-3xl border-2 transition-all duration-500
-                  ${progress.certificateGenerated ? 'border-yellow-400 bg-yellow-400/20 text-yellow-400 shadow-[0_0_60px_rgba(250,204,21,0.5)]' :
-                    allLessonsCompleted ? 'border-yellow-500 bg-yellow-500/20 text-yellow-500 animate-pulse shadow-[0_0_40px_rgba(234,179,8,0.4)] cursor-pointer' : 
-                    'border-zinc-800 bg-zinc-900/80 text-zinc-700'
-                  }`}
+              <Link 
+                to={allLessonsCompleted ? "/course/cpp/assessment" : "#"}
+                className={allLessonsCompleted ? "cursor-pointer" : "cursor-default"}
               >
-                {progress.certificateGenerated ? <Trophy size={56} /> : allLessonsCompleted ? <Play size={56} className="ml-1 fill-yellow-500" /> : <Lock size={56} />}
-              </motion.div>
+                <motion.div
+                  initial={{ opacity: 0, scale: 0.8 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  whileHover={allLessonsCompleted ? { scale: 1.1 } : {}}
+                  className={`relative z-10 flex items-center justify-center w-32 h-32 rounded-3xl border-2 transition-all duration-500
+                    ${progress.certificateGenerated ? 'border-yellow-400 bg-yellow-400/20 text-yellow-400 shadow-[0_0_60px_rgba(250,204,21,0.5)]' :
+                      allLessonsCompleted ? 'border-yellow-500 bg-yellow-500/20 text-yellow-500 animate-pulse shadow-[0_0_40px_rgba(234,179,8,0.4)]' : 
+                      'border-zinc-800 bg-zinc-900/80 text-zinc-700'
+                    }`}
+                >
+                  {progress.certificateGenerated ? <Trophy size={56} /> : allLessonsCompleted ? <Play size={56} className="ml-1 fill-yellow-500" /> : <Lock size={56} />}
+                </motion.div>
+              </Link>
 
               <div className="mt-8 text-center max-w-sm">
                 <h3 className={`font-black text-3xl tracking-tighter mb-2 ${allLessonsCompleted ? 'text-yellow-400' : 'text-zinc-600'}`}>FINAL EXAM</h3>

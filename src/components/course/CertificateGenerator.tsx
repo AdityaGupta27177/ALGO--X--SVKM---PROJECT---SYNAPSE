@@ -4,6 +4,7 @@ import html2canvas from "html2canvas";
 import { Download, Award, ShieldCheck } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/lib/auth";
+import confetti from "canvas-confetti";
 
 export default function CertificateGenerator({ score }: { score: number }) {
   const { profile } = useAuth();
@@ -11,10 +12,6 @@ export default function CertificateGenerator({ score }: { score: number }) {
 
   const downloadCertificate = async () => {
     if (!certificateRef.current) return;
-
-    // Show the certificate temporarily for capture
-    const element = certificateRef.current;
-    element.style.display = "block";
 
     try {
       const canvas = await html2canvas(element, {
@@ -32,10 +29,16 @@ export default function CertificateGenerator({ score }: { score: number }) {
 
       pdf.addImage(imgData, "PNG", 0, 0, canvas.width, canvas.height);
       pdf.save(`AlgoX_Cpp_Certificate_${profile?.display_name?.replace(/\s+/g, '_') || 'Student'}.pdf`);
+      
+      // Celebration!
+      confetti({
+        particleCount: 200,
+        spread: 100,
+        origin: { y: 0.7 },
+        colors: ['#EAB308', '#FFFFFF', '#000000']
+      });
     } catch (error) {
       console.error("Certificate generation failed:", error);
-    } finally {
-      element.style.display = "none";
     }
   };
 
@@ -57,7 +60,8 @@ export default function CertificateGenerator({ score }: { score: number }) {
       <div 
         ref={certificateRef}
         style={{ 
-          display: "none", 
+          opacity: 0,
+          pointerEvents: "none",
           width: "1200px", 
           height: "850px", 
           padding: "60px",

@@ -21,8 +21,16 @@ export default function Lesson() {
   const [currentStep, setCurrentStep] = useState<Step>("learn");
   const [selectedOption, setSelectedOption] = useState<number | null>(null);
   const [isQuizSubmitted, setIsQuizSubmitted] = useState(false);
+  const [isSplineLoading, setIsSplineLoading] = useState(true);
 
   const lesson = useMemo(() => cppLessons.find((l) => l.id === id), [id]);
+
+  // Reset state when lesson changes without reload
+  useEffect(() => {
+    setCurrentStep("learn");
+    setSelectedOption(null);
+    setIsQuizSubmitted(false);
+  }, [id]);
 
   if (!lesson) {
     return (
@@ -73,19 +81,36 @@ export default function Lesson() {
   return (
     <div className="min-h-screen relative overflow-hidden bg-[#0a0a0a] text-foreground flex flex-col">
       {/* 3D Spline Background */}
-      <div className="fixed inset-0 z-0 w-full h-full pointer-events-auto flex items-center justify-center overflow-hidden opacity-30">
+      <div className="fixed inset-0 z-0 w-full h-full pointer-events-none flex items-center justify-center overflow-hidden opacity-30">
         <div className="w-full h-full scale-[1.5] origin-center">
-          <Spline className="w-full h-full" scene="https://prod.spline.design/y-2X8jz-aKmn7u0m/scene.splinecode" />
+          <Spline 
+            onLoad={() => setIsSplineLoading(false)}
+            className="w-full h-full" 
+            scene="https://prod.spline.design/y-2X8jz-aKmn7u0m/scene.splinecode" 
+          />
         </div>
       </div>
+
+      {/* Loading Overlay */}
+      <AnimatePresence>
+        {isSplineLoading && (
+          <motion.div 
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-50 bg-[#0a0a0a] flex flex-col items-center justify-center gap-4"
+          >
+            <div className="w-12 h-12 border-4 border-primary/20 border-t-primary rounded-full animate-spin" />
+            <p className="text-primary font-bold tracking-widest uppercase text-xs animate-pulse">Initializing 3D Environment...</p>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       <div className="relative z-10 flex flex-col flex-1">
         <Navbar />
         
         <div className="flex-1 flex flex-col lg:flex-row overflow-hidden">
           {/* Left Panel: Content */}
-          <main className="flex-1 overflow-y-auto p-6 lg:p-12 pointer-events-none">
-            <div className="max-w-3xl mx-auto pointer-events-auto">
+          <main className="flex-1 overflow-y-auto p-6 lg:p-12">
+            <div className="max-w-3xl mx-auto">
               <Link to="/course/cpp" className="flex items-center text-zinc-500 hover:text-white transition-colors mb-8 w-fit group">
                 <ChevronLeft size={20} className="group-hover:-translate-x-1 transition-transform" />
                 <span>Back to Roadmap</span>
@@ -153,13 +178,32 @@ export default function Lesson() {
                   <div className="space-y-8">
                     <h2 className="text-3xl font-bold text-white">Check Your Knowledge</h2>
                     
-                    <Card className="bg-zinc-900/50 border-zinc-800">
+                    <Card className="bg-zinc-900/50 border-zinc-800 overflow-hidden relative">
+                      <AnimatePresence>
+                        {isQuizSubmitted && selectedOption === lesson.quiz.correctIndex && (
+                          <motion.div 
+                            initial={{ opacity: 0 }}
+                            animate={{ opacity: 1 }}
+                            className="absolute inset-0 bg-green-500/10 backdrop-blur-sm z-20 flex items-center justify-center pointer-events-none"
+                          >
+                            <motion.div
+                              initial={{ scale: 0.5, rotate: -45 }}
+                              animate={{ scale: 1, rotate: 0 }}
+                              className="bg-green-500 text-white p-4 rounded-full shadow-[0_0_40px_rgba(34,197,94,0.6)]"
+                            >
+                              <CheckCircle2 size={48} />
+                            </motion.div>
+                          </motion.div>
+                        )}
+                      </AnimatePresence>
+
                       <CardContent className="pt-6 space-y-6">
                         <p className="text-xl text-white font-medium">{lesson.quiz.question}</p>
                         
                         <div className="space-y-3">
                           {lesson.quiz.options.map((option, idx) => (
-                            <button
+                            <motion.button
+                              layout
                               key={idx}
                               disabled={isQuizSubmitted && selectedOption === lesson.quiz.correctIndex}
                               onClick={() => !isQuizSubmitted && setSelectedOption(idx)}
@@ -173,7 +217,7 @@ export default function Lesson() {
                             >
                               <span>{option}</span>
                               {isQuizSubmitted && idx === lesson.quiz.correctIndex && <CheckCircle2 size={20} />}
-                            </button>
+                            </motion.button>
                           ))}
                         </div>
                       </CardContent>
@@ -202,7 +246,6 @@ export default function Lesson() {
                               onClick={() => {
                                 const nextIndex = cppLessons.findIndex(l => l.id === lesson.id) + 1;
                                 navigate(`/course/cpp/lesson/${cppLessons[nextIndex].id}`);
-                                window.location.reload(); // Refresh to reset state for new lesson
                               }}
                               className="bg-green-600 hover:bg-green-500 text-white px-12 h-12 text-lg shadow-[0_0_20px_rgba(22,163,74,0.3)]"
                             >
@@ -210,10 +253,10 @@ export default function Lesson() {
                             </Button>
                           ) : (
                             <Button 
-                              onClick={() => navigate("/course/cpp")}
-                              className="bg-yellow-600 hover:bg-yellow-500 text-white px-12 h-12 text-lg"
+                              onClick={() => navigate("/course/cpp/assessment")}
+                              className="bg-yellow-600 hover:bg-yellow-500 text-white px-12 h-12 text-lg shadow-[0_0_30px_rgba(202,138,4,0.4)]"
                             >
-                              Final Exam <Trophy className="ml-2" />
+                              Take Final Exam <Trophy className="ml-2" />
                             </Button>
                           )}
                         </div>
