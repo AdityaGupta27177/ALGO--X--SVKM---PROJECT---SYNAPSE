@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useToast } from "@/hooks/use-toast";
 import Navbar from "@/components/Navbar";
-import { SkillNode, Edge, NodeGroup, SkillMapState, GRID_SIZE, NODE_W, NODE_H, STATUS_COLORS, GROUP_COLORS, snapToGrid, genId, wouldCreateCycle, getDefaultState } from "@/components/skillmap/types";
+import { SkillNode, Edge, NodeGroup, SkillMapState, GRID_SIZE, NODE_W, NODE_H, STATUS_COLORS, GROUP_COLORS, snapToGrid, genId, wouldCreateCycle, getDefaultState, propagateStatus } from "@/components/skillmap/types";
 
 const STORAGE_KEY = "skillMapState";
 
@@ -33,7 +33,14 @@ export default function SkillMap() {
   const [groupName, setGroupName] = useState("");
   const [gridSnap, setGridSnap] = useState(true);
 
-  useEffect(() => { localStorage.setItem(STORAGE_KEY, JSON.stringify(state)); }, [state]);
+  useEffect(() => {
+    setState(s => {
+      const newNodes = propagateStatus(s.nodes, s.edges);
+      if (newNodes === s.nodes) return s;
+      return { ...s, nodes: newNodes };
+    });
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(state)); 
+  }, [state]);
 
   const completionPct = useMemo(() => {
     if (!state.nodes.length) return 0;
@@ -172,12 +179,16 @@ export default function SkillMap() {
       <Navbar />
       {/* Toolbar */}
       <div className="flex items-center gap-2 px-4 py-2 border-b border-white/10 bg-black/50 backdrop-blur-md z-30 flex-shrink-0">
-        <Button size="sm" variant="outline" className="gap-1 border-white/10 text-xs" onClick={() => addNode()}>
-          <Plus size={14} /> Add Node
-        </Button>
-        <Button size="sm" variant="outline" className="gap-1 border-white/10 text-xs" onClick={() => setEdgeMode(edgeMode ? null : "__start__")}>
-          <Link2 size={14} /> {edgeMode ? "Cancel Edge" : "Draw Edge"}
-        </Button>
+        <div 
+          draggable 
+          onDragStart={(e) => {
+            e.dataTransfer.setData("application/reactflow", "newNode");
+            e.dataTransfer.effectAllowed = "move";
+          }}
+          className="flex items-center gap-1 px-2 py-1 bg-white/10 border border-white/20 rounded cursor-grab text-xs hover:bg-white/20 transition-colors"
+        >
+          <Plus size={14} /> Drag Node
+        </div>
         <div className="w-px h-6 bg-white/10" />
         <Button size="sm" variant="ghost" className="text-xs" onClick={() => setZoom(z => Math.min(2, z + 0.15))}><ZoomIn size={14} /></Button>
         <span className="text-xs text-zinc-500 w-12 text-center">{Math.round(zoom * 100)}%</span>
@@ -212,6 +223,15 @@ export default function SkillMap() {
         <div ref={canvasRef} className="flex-1 relative overflow-hidden cursor-grab active:cursor-grabbing"
           onMouseDown={onMouseDown} onMouseMove={onMouseMove} onMouseUp={onMouseUp} onMouseLeave={onMouseUp} onWheel={onWheel}
           onDoubleClick={e => { const r = canvasRef.current!.getBoundingClientRect(); addNode(e.clientX - r.left, e.clientY - r.top); }}
+          onDragOver={e => e.preventDefault()}
+          onDrop={e => {
+            e.preventDefault();
+            const type = e.dataTransfer.getData("application/reactflow");
+            if (type === "newNode") {
+              const r = canvasRef.current!.getBoundingClientRect();
+              addNode(e.clientX - r.left, e.clientY - r.top);
+            }
+          }}
         >
           <div className="canvas-bg absolute inset-0" style={{ backgroundImage: `radial-gradient(circle, rgba(255,255,255,0.03) 1px, transparent 1px)`, backgroundSize: `${GRID_SIZE * zoom}px ${GRID_SIZE * zoom}px`, backgroundPosition: `${pan.x * zoom}px ${pan.y * zoom}px` }} />
 
@@ -270,15 +290,32 @@ export default function SkillMap() {
                   style={{ left: node.x, top: node.y, width: NODE_W, height: NODE_H, backgroundColor: sc.bg, borderColor: sc.border, boxShadow: sc.glow, color: sc.text }}
                   onMouseDown={e => {
                     e.stopPropagation();
-                    if (edgeMode === "__start__") { setEdgeMode(node.id); return; }
-                    if (edgeMode && edgeMode !== node.id) { addEdge(edgeMode, node.id); setEdgeMode(null); return; }
+                    if (edgeMode) return; // Prevent drag if in edge mode
                     setDragging(node.id);
                     const r = canvasRef.current!.getBoundingClientRect();
                     const p = toCanvas(e.clientX - r.left, e.clientY - r.top);
                     setDragOff({ x: p.x - node.x, y: p.y - node.y });
                   }}
                   onClick={e => { e.stopPropagation(); if (!dragging) setSelected(node.id); }}
+                  onMouseUp={e => {
+                    e.stopPropagation();
+                    if (edgeMode && edgeMode !== node.id && edgeMode !== "__start__") {
+                      addEdge(edgeMode, node.id);
+                      setEdgeMode(null);
+                    }
+                    if (dragging) setDragging(null);
+                  }}
                 >
+                  {/* Edge Connection Port */}
+                  <div 
+                    className="absolute right-[-8px] top-1/2 -translate-y-1/2 w-4 h-4 bg-primary rounded-full cursor-crosshair z-20 hover:scale-150 transition-transform opacity-0 group-hover:opacity-100"
+                    onMouseDown={(e) => {
+                      e.stopPropagation();
+                      setEdgeMode(node.id);
+                      const r = canvasRef.current!.getBoundingClientRect();
+                      setEdgeMouse(toCanvas(e.clientX - r.left, e.clientY - r.top));
+                    }}
+                  />
                   <div className="flex items-center gap-2 px-3 pt-2">
                     {statusIcon(node.status)}
                     <span className="text-sm font-bold truncate flex-1">{node.title}</span>
@@ -337,25 +374,12 @@ export default function SkillMap() {
                   <Input value={selectedNode.title} onChange={e => updateNode(selectedNode.id, { title: e.target.value })} className="mt-1 bg-white/5 border-white/10 text-white" />
                 </div>
                 <div>
-                  <label className="text-[10px] text-zinc-500 uppercase tracking-widest">Status</label>
-                  <div className="grid grid-cols-2 gap-1 mt-1">
-                    {(["locked", "unlocked", "in-progress", "complete"] as const).map(s => (
-                      <button key={s} onClick={() => {
-                        const xp = s === "complete" ? 100 : s === "in-progress" ? Math.min(selectedNode.xp, 60) : 0;
-                        const progress = s === "complete" ? 100 : s === "in-progress" ? Math.max(selectedNode.progress, 10) : 0;
-                        updateNode(selectedNode.id, { status: s, xp, progress });
-                      }}
-                        className={`text-[10px] py-1.5 rounded-lg border font-bold uppercase tracking-wider transition-all ${selectedNode.status === s ? "border-primary bg-primary/10 text-primary" : "border-white/10 text-zinc-500 hover:border-white/20"}`}
-                      >{s}</button>
-                    ))}
-                  </div>
+                  <label className="text-[10px] text-zinc-500 uppercase tracking-widest">Progress: {selectedNode.progress}%</label>
+                  <input type="range" min={0} max={100} value={selectedNode.progress} onChange={e => {
+                    // Update progress and xp; propagation logic handles status
+                    updateNode(selectedNode.id, { progress: +e.target.value, xp: Math.round(+e.target.value * 0.6) });
+                  }} className="w-full mt-1 accent-primary" disabled={selectedNode.status === 'locked'} />
                 </div>
-                {selectedNode.status === "in-progress" && (
-                  <div>
-                    <label className="text-[10px] text-zinc-500 uppercase tracking-widest">Progress: {selectedNode.progress}%</label>
-                    <input type="range" min={0} max={100} value={selectedNode.progress} onChange={e => updateNode(selectedNode.id, { progress: +e.target.value, xp: Math.round(+e.target.value * 0.6) })} className="w-full mt-1 accent-primary" />
-                  </div>
-                )}
                 <div>
                   <label className="text-[10px] text-zinc-500 uppercase tracking-widest">Notes</label>
                   <textarea value={selectedNode.notes} onChange={e => updateNode(selectedNode.id, { notes: e.target.value })} rows={3} className="mt-1 w-full bg-white/5 border border-white/10 rounded-lg p-2 text-sm text-white resize-none focus:outline-none focus:ring-1 focus:ring-primary/50" />

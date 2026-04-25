@@ -81,8 +81,41 @@ export function wouldCreateCycle(edges: Edge[], fromId: string, toId: string): b
     return false;
   }
 
-  // Check from the 'toId' node since we added fromId->toId
   return dfs(fromId);
+}
+
+// Automatically calculates the correct status for all nodes based on progress and DAG edges
+export function propagateStatus(nodes: SkillNode[], edges: Edge[]): SkillNode[] {
+  let changed = false;
+  const newNodes = nodes.map(node => {
+    let targetStatus: SkillNode['status'] = 'locked';
+    
+    if (node.progress === 100) {
+      targetStatus = 'complete';
+    } else if (node.progress > 0) {
+      targetStatus = 'in-progress';
+    } else {
+      const incomingEdges = edges.filter(e => e.to === node.id);
+      let allComplete = true;
+      for (const e of incomingEdges) {
+        const parent = nodes.find(n => n.id === e.from);
+        // Progress must be 100 to be complete
+        if (!parent || parent.progress !== 100) {
+          allComplete = false;
+          break;
+        }
+      }
+      targetStatus = allComplete ? 'unlocked' : 'locked';
+    }
+
+    if (node.status !== targetStatus) {
+      changed = true;
+      return { ...node, status: targetStatus };
+    }
+    return node;
+  });
+
+  return changed ? newNodes : nodes;
 }
 
 export function getDefaultState(): SkillMapState {
