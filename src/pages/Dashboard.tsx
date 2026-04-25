@@ -96,6 +96,37 @@ export default function Dashboard() {
             </CardContent>
           </Card>
 
+          {/* Skill Map Card */}
+          <Card className="glass-card border-border transition-all hover:border-purple-500/50 hover:glow-purple pointer-events-auto">
+            <CardHeader className="pb-3">
+              <div className="flex items-center justify-between">
+                <CardTitle className="text-foreground flex items-center gap-2">
+                  <span className="text-purple-400">✨</span> Skill Map
+                </CardTitle>
+                <Badge className="bg-purple-500/20 text-purple-400 border-purple-500/20">Interactive</Badge>
+              </div>
+              <CardDescription className="text-muted-foreground">
+                Drag-to-create nodes, draw dependency edges, and track your gamified learning progress on a freeform canvas.
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="flex flex-wrap gap-1.5">
+                {["drag & drop", "dependencies", "progress", "export"].map((t) => (
+                  <span key={t} className="rounded-md bg-muted px-2 py-0.5 text-xs text-muted-foreground">{t}</span>
+                ))}
+              </div>
+              <div>
+                <div className="mb-1 flex justify-between text-xs text-muted-foreground">
+                  <span>Exploration</span><span>Available</span>
+                </div>
+                <Progress value={100} className="h-1.5 bg-purple-500/20" />
+              </div>
+              <Button asChild className="w-full bg-purple-600 hover:bg-purple-500 text-white shadow-lg shadow-purple-500/20">
+                <Link to="/skillmap">Open Skill Map</Link>
+              </Button>
+            </CardContent>
+          </Card>
+
           <Card className="glass-card border-border transition-all hover:border-primary/30 hover:glow-primary pointer-events-auto">
             <CardHeader className="pb-3">
               <div className="flex items-center justify-between">

@@ -20,6 +20,7 @@ import AuthPage from "./pages/AuthPage";
 import Roadmap from "./pages/course/Roadmap";
 import Lesson from "./pages/course/Lesson";
 import Assessment from "./pages/course/Assessment";
+import SkillMap from "./pages/SkillMap";
 import { BookLoader } from "./components/BookLoader";
 
 const queryClient = new QueryClient();
@@ -70,6 +71,7 @@ const App = () => {
                 <Route path="/course/cpp" element={<ProtectedRoute><Roadmap /></ProtectedRoute>} />
                 <Route path="/course/cpp/lesson/:id" element={<ProtectedRoute><Lesson /></ProtectedRoute>} />
                 <Route path="/course/cpp/assessment" element={<ProtectedRoute><Assessment /></ProtectedRoute>} />
+                <Route path="/skillmap" element={<ProtectedRoute><SkillMap /></ProtectedRoute>} />
                 
                 <Route path="*" element={<NotFound />} />
               </Routes>
