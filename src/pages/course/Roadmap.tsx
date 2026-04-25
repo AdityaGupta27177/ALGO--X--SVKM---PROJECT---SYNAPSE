@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
 import { Link } from "react-router-dom";
 import Spline from '@splinetool/react-spline';
 import { motion, AnimatePresence } from "framer-motion";
@@ -13,6 +13,26 @@ export default function Roadmap() {
   const { completedLessons } = progress;
   const [isSplineLoading, setIsSplineLoading] = useState(true);
 
+  // Mouse tracking for interactive robot
+  const [mouseOffset, setMouseOffset] = useState({ x: 0, y: 0 });
+  const rafRef = useRef<number>(0);
+
+  useEffect(() => {
+    const handleMouseMove = (e: MouseEvent) => {
+      if (rafRef.current) cancelAnimationFrame(rafRef.current);
+      rafRef.current = requestAnimationFrame(() => {
+        const x = (e.clientX / window.innerWidth - 0.5) * 2;  // -1 to 1
+        const y = (e.clientY / window.innerHeight - 0.5) * 2; // -1 to 1
+        setMouseOffset({ x, y });
+      });
+    };
+    window.addEventListener('mousemove', handleMouseMove);
+    return () => {
+      window.removeEventListener('mousemove', handleMouseMove);
+      if (rafRef.current) cancelAnimationFrame(rafRef.current);
+    };
+  }, []);
+
   const isLessonUnlocked = (index: number) => {
     if (index === 0) return true;
     return completedLessons.includes(cppLessons[index - 1].id);
@@ -22,9 +42,16 @@ export default function Roadmap() {
 
   return (
     <div className="min-h-screen relative overflow-hidden bg-[#0a0a0a] text-foreground">
-      {/* 3D Spline Background - Grid of Cubes (Specific to this page) */}
-      <div className="fixed inset-0 z-0 w-full h-full pointer-events-none flex items-center justify-center overflow-hidden opacity-40">
-        <div className="w-full h-full scale-[1.2] lg:scale-[1.1] origin-center">
+      {/* 3D Spline Background - Interactive Robot that follows cursor */}
+      <div className="fixed inset-0 z-0 w-full h-full pointer-events-none flex items-center justify-center overflow-hidden opacity-40" style={{ perspective: '1200px' }}>
+        <div 
+          className="w-full h-full scale-[1.2] lg:scale-[1.1] origin-center"
+          style={{
+            transform: `translate3d(${mouseOffset.x * 15}px, ${mouseOffset.y * 10}px, 0) rotateY(${mouseOffset.x * 8}deg) rotateX(${-mouseOffset.y * 5}deg)`,
+            transition: 'transform 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94)',
+            willChange: 'transform',
+          }}
+        >
           <Spline 
             onLoad={() => setIsSplineLoading(false)}
             className="w-full h-full" 
