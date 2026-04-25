@@ -1,4 +1,6 @@
 import { useState } from "react";
+import Spline from '@splinetool/react-spline';
+import { motion, AnimatePresence } from 'framer-motion';
 import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "@/lib/auth";
 import { supabase } from "@/integrations/supabase/client";
@@ -70,17 +72,22 @@ export default function SignIn() {
   };
 
   return (
-    <div className="flex min-h-screen items-center justify-center px-4" style={{ backgroundColor: "#0a0a0a" }}>
-      <div className="w-full max-w-sm animate-fade-in">
-        <div className="mb-8 text-center">
-          <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-2xl bg-primary/20">
-            <Gamepad2 className="h-7 w-7 text-primary" />
+    <div className="flex min-h-screen bg-[#0a0a0a] flex-col lg:flex-row overflow-hidden">
+      {/* Left Column: Auth Form */}
+      <div className="flex-1 flex items-center justify-center p-6 lg:p-12 z-20 relative">
+        {/* Subtle glow behind form */}
+        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[80%] h-[80%] bg-primary/10 blur-[100px] pointer-events-none rounded-full" />
+        
+        <div className="w-full max-w-sm animate-fade-in relative z-10">
+          <div className="mb-8 text-center">
+            <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-2xl bg-primary/20">
+              <Gamepad2 className="h-7 w-7 text-primary" />
+            </div>
+            <h1 className="text-2xl font-bold text-white">C++ Game Dev Academy</h1>
+            <p className="mt-2 text-sm text-zinc-400">Learn game development by building real games</p>
           </div>
-          <h1 className="text-2xl font-bold text-foreground">C++ Game Dev Academy</h1>
-          <p className="mt-2 text-sm text-muted-foreground">Learn game development by building real games</p>
-        </div>
 
-        <div className="glass-card p-6">
+          <div className="glass-card p-6 border-zinc-800 bg-black/40 backdrop-blur-xl">
           <Tabs defaultValue="signin">
             <TabsList className="grid w-full grid-cols-2 bg-muted">
               <TabsTrigger value="signin" className="font-semibold text-foreground data-[state=active]:text-primary data-[state=active]:bg-primary/10">Sign In</TabsTrigger>
@@ -136,7 +143,23 @@ export default function SignIn() {
           </Tabs>
         </div>
 
-        <p className="mt-4 text-center text-xs text-muted-foreground">Secure authentication powered by ALGO-X SYNAPSE</p>
+        <p className="mt-4 text-center text-xs text-zinc-500">Secure authentication powered by ALGO-X SYNAPSE</p>
+      </div>
+      </div>
+
+      {/* Right Column: 3D Animation */}
+      <div className="flex-1 min-h-[40vh] lg:min-h-screen relative flex items-center justify-center order-first lg:order-last border-l border-zinc-800/50">
+        {/* Spline Component */}
+        <div className="absolute inset-0 z-0">
+          <Spline 
+            scene="https://prod.spline.design/6phm6qYnmYticLXe/scene.splinecode" 
+            className="w-full h-full object-cover"
+          />
+        </div>
+        
+        {/* Blending Overlays */}
+        <div className="absolute inset-0 pointer-events-none z-10 bg-gradient-to-t from-[#0a0a0a] via-transparent to-transparent lg:bg-gradient-to-l lg:from-[#0a0a0a]" />
+        <div className="absolute inset-0 pointer-events-none z-10 bg-gradient-to-b from-[#0a0a0a] via-transparent to-transparent h-32 lg:h-full lg:w-32 lg:bg-gradient-to-r lg:from-[#0a0a0a]" />
       </div>
     </div>
   );

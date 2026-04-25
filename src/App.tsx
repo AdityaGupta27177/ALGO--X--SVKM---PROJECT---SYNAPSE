@@ -17,6 +17,9 @@ import SnakeLanding from "./pages/SnakeLanding";
 // import SnakeTest from "./pages/SnakeTest";
 import NotFound from "./pages/NotFound";
 import AuthPage from "./pages/AuthPage";
+import Roadmap from "./pages/course/Roadmap";
+import Lesson from "./pages/course/Lesson";
+import Assessment from "./pages/course/Assessment";
 import { BookLoader } from "./components/BookLoader";
 
 const queryClient = new QueryClient();
@@ -62,8 +65,12 @@ const App = () => {
                 <Route path="/games/pong/tutorial" element={<ProtectedRoute><PongTutorial /></ProtectedRoute>} />
                 <Route path="/games/pong/test" element={<ProtectedRoute><PongTest /></ProtectedRoute>} />
                 <Route path="/games/snake" element={<ProtectedRoute><SnakeLanding /></ProtectedRoute>} />
-                {/* <Route path="/games/snake/tutorial" element={<ProtectedRoute><SnakeTutorial /></ProtectedRoute>} /> */}
-                {/* <Route path="/games/snake/test" element={<ProtectedRoute><SnakeTest /></ProtectedRoute>} /> */}
+                
+                {/* Intro to C++ Course Routes */}
+                <Route path="/course/cpp" element={<ProtectedRoute><Roadmap /></ProtectedRoute>} />
+                <Route path="/course/cpp/lesson/:id" element={<ProtectedRoute><Lesson /></ProtectedRoute>} />
+                <Route path="/course/cpp/assessment" element={<ProtectedRoute><Assessment /></ProtectedRoute>} />
+                
                 <Route path="*" element={<NotFound />} />
               </Routes>
             </BrowserRouter>
